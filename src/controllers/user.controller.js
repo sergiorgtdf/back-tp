@@ -51,7 +51,8 @@ export const getUsers = async (req, res) => {
 
 export const getUserById = async (req, res) => {
     try {
-        const user = await User.findById(_id: req.params.userId);
+        const user = await User.findById(req.params.userId);
+
         res.status(200).json(user);
     } catch (error) {
         res.status(404).json(["El usuario no existe!"]);
@@ -90,7 +91,8 @@ const { secret } = settingDotEnvSecret();
 export const verifyToken = async (req, res) => {
     try {
         //recibe el cookie del frontend
-        const { token } = req.cookies;
+        const token = req.token;
+        // const token = req.headers.authorization;
         // verifica que venga un token
         if (!token)
             return res
@@ -126,29 +128,22 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
     try {
         // Buscamos user en la DB
-        const foundUser = await User.findOne({ email });
+        const user = await User.findOne({ email });
 
-        if (!foundUser) return res.status(400).json(["Usuario no existe!"]);
+        if (!user) return res.status(400).json(["Usuario no existe!"]);
 
         // Comparamos password
-        const matchPassword = await bcrypt.compare(
-            password,
-            foundUser.password
-        );
+        const matchPassword = await bcrypt.compare(password, user.password);
 
         if (!matchPassword)
-            return res.status(401).json(["Password incorrecto"]);
+            return res.status(401).json({ message: "Password incorrecto" });
 
         // Crea el token
-        const token = await createAccessToken({ id: foundUser._id });
-        res.json({ token, foundUser });
-        console.log(token);
+        const token = await createAccessToken({ id: user._id });
+        // res.json({ token, foundUser });
+        res.cookie("token", token);
 
-        res.status(200).json({
-            message: "Bienvenido!",
-            username: foundUser.username,
-            token,
-        });
+        res.status(200).json({ token, user });
     } catch (error) {
         return res.status(500).json(["No se pudo iniciar sesion"]);
     }
@@ -161,7 +156,8 @@ export const logout = async (req, res) => {
 
 export const profile = async (req, res) => {
     try {
-        // console.log(req.headers.cookie);
+        console.log(req.headers.cookie);
+        console.log("Id from profile", req.user._id);
         const userFound = await User.findById(req.user.id);
         // const userFound = await User.findById(req.user.id);
         if (!userFound)

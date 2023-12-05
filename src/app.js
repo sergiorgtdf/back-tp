@@ -23,6 +23,8 @@ connectMongo();
 server.use(
     cors({
         origin: "http://localhost:5173",
+
+        methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true,
     })
 );
@@ -30,7 +32,7 @@ server.use(
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 server.use(cookieParser());
-server.use(morgan("tiny"));
+server.use(morgan("dev"));
 
 server.use("/api/", userRoutes);
 // server.use("/api/", taskRoutes);
