@@ -1,18 +1,20 @@
-import bcrypt from "bcrypt";
+import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 import { settingDotEnvSecret } from "../config/config.js";
-import User from "../models/user.model.js";
 
 import { createAccessToken } from "../middlewares/jwt.validator.js";
 
 // -------------------------User--------------------------
+// TODO: OK;
 export const createUser = async (req, res) => {
     try {
-        const { username, email, password, roles } = req.body;
+        const { username, email, password } = req.body;
         // Validar Usuario
         const userFound = await User.findOne({ email });
-        if (userFound) return res.status(400).json(["El usuario ya existe!"]);
+        if (userFound)
+            return res.status(400).json({ message: "El usuario ya existe!" });
 
         const passwordHash = await bcrypt.hash(password, 10);
 
@@ -29,13 +31,14 @@ export const createUser = async (req, res) => {
         // Envia el token
         res.cookie("token", token);
         res.status(200).json({
-            message: "Se registro correctamente!",
-            token,
+            id: savedUser._id,
+            username: savedUser.username,
+            email: savedUser.email,
+            createAt: savedUser.createAt,
+            updatedAt: savedUser.updatedAt,
         });
     } catch (error) {
-        // res.status(500).json({ message: "Error registering user", error });
-        res.status(500).json([error.message]);
-        // console.error(error);
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -124,18 +127,20 @@ export const verifyToken = async (req, res) => {
     }
 };
 
+// TODO: OK;
 export const login = async (req, res) => {
     const { email, password } = req.body;
     try {
         // Buscamos user en la DB
         const user = await User.findOne({ email });
 
-        if (!user) return res.status(400).json(["Usuario no existe!"]);
+        if (!user)
+            return res.status(400).json({ message: "Usuario no existe!" });
 
         // Comparamos password
-        const matchPassword = await bcrypt.compare(password, user.password);
+        const isMatchPassword = await bcrypt.compare(password, user.password);
 
-        if (!matchPassword)
+        if (!isMatchPassword)
             return res.status(401).json({ message: "Password incorrecto" });
 
         // Crea el token
@@ -143,12 +148,21 @@ export const login = async (req, res) => {
         // res.json({ token, foundUser });
         res.cookie("token", token);
 
-        res.status(200).json({ token, user });
+        res.status(200).json({
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        });
     } catch (error) {
-        return res.status(500).json(["No se pudo iniciar sesion"]);
+        return res
+            .status(500)
+            .json({ message: `No se pudo iniciar sesion: ${error}` });
     }
 };
 
+// TODO: OK;
 export const logout = async (req, res) => {
     res.cookie("token", "", { expires: new Date(0) });
     return res.status(200).json({ message: "Nos vemos pronto!" });
@@ -162,7 +176,15 @@ export const profile = async (req, res) => {
         // const userFound = await User.findById(req.user.id);
         if (!userFound)
             return res.status(404).json({ message: "El usuario no existe" });
-        res.status(200).json({ message: "Profile", userFound });
+        res.status(200).json({
+            id: userFound._id,
+
+            username: userFound.username,
+            email: userFound.email,
+            imageURL: userFound.imageURL,
+            createdAt: userFound.createdAt,
+            updatedAt: userFound.updatedAt,
+        });
     } catch (error) {
         res.status(500).json({ message: "Se produjo un error" });
         console.error(error);
