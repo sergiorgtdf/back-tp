@@ -37,7 +37,7 @@ export const loginValidationRules = [
 export const errorHandle = (req, res, next) => {
     const err = validationResult(req);
     if (!err.isEmpty()) {
-        // return res.status(400).send({ message: "Validation error", errors });
+        // return res.status(400).send({ message: [errmsg] });
         return res.status(400).send([err.errors[0].msg]);
     }
 
