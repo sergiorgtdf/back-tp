@@ -4,7 +4,7 @@ export const userValidationRules = [
     body(`username`)
         .notEmpty()
         .withMessage(`Username is required`)
-        .isLength({ min: 6 })
+        .isLength({ min: 4 })
         .withMessage(`Username must be at least 6 characters long`),
 
     body(`email`)

@@ -14,7 +14,7 @@ export const createUser = async (req, res) => {
         // Validar Usuario
         const userFound = await User.findOne({ email });
 
-        if (userFound) return res.status(400).json([`El Usuario ya existe`]);
+        if (userFound) return res.status(400).send(["El Usuario ya existe"]);
 
         const passwordHash = await bcrypt.hash(password, 10);
 
@@ -32,6 +32,14 @@ export const createUser = async (req, res) => {
         });
         // Envia el token
         res.cookie("token", token);
+        res.localstorage.setItem("token", token);
+        res.localstorage.setItem("user", {
+            id: savedUser._id,
+            username: savedUser.username,
+            email: savedUser.email,
+            createdAt: savedUser.createdAt,
+            updateddAt: savedUser.updatedAt,
+        });
 
         res.status(200).json({
             id: savedUser._id,
@@ -41,7 +49,7 @@ export const createUser = async (req, res) => {
             updateddAt: savedUser.updatedAt,
         });
     } catch (error) {
-        res.status(500).json({ message: ["Se produjo un error"] });
+        res.status(500).send(["Se produjo unerror"]);
     }
 };
 
@@ -65,13 +73,15 @@ export const login = async (req, res) => {
         // res.json({ token, foundUser });
         res.cookie("token", token);
 
-        res.status(200).json({
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt,
-        });
+        res.status(200).json({ token, user });
+
+        // res.status(200).json({
+        //     id: user._id,
+        //     username: user.username,
+        //     email: user.email,
+        //     createdAt: user.createdAt,
+        //     updatedAt: user.updatedAt,
+        // });
     } catch (error) {
         res.status(500).send([`No se pudo iniciar sesion`]);
     }
@@ -85,21 +95,21 @@ export const verifyToken = async (req, res) => {
         // const token = req.headers.authorization;
         // verifica que venga un token
         if (!token)
-            return res.status(401).json({
-                message: ["No tienes autorizacion para realizar esta accion"],
-            });
+            return res
+                .status(401)
+                .json(["No tienes autorizacion para realizar esta accion"]);
         // verifica el token
         const user = jwt.verify(token, secret);
         if (!user)
-            return res.status(401).json({
-                message: ["No tienes autorizacion para realizar esta accion"],
-            });
+            return res
+                .status(401)
+                .json(["No tienes autorizacion para realizar esta accion"]);
         // verifica que el usuario exista en la DB
         const userFound = await User.findById(user.id);
         if (!userFound)
-            return res.status(401).json({
-                message: ["No tienes autorizacion para realizar esta accion"],
-            });
+            return res
+                .status(401)
+                .json(["No tienes autorizacion para realizar esta accion"]);
         // si todo esta bien, envia el usuario
         res.status(200).json({
             id: user.id,
@@ -108,9 +118,9 @@ export const verifyToken = async (req, res) => {
             avatarUrl: user.avatarURL,
         });
     } catch (error) {
-        res.status(500).json({
-            message: ["No tienes autorizacion para realizar esta accion"],
-        });
+        res.status(500).json([
+            "No tienes autorizacion para realizar esta accion",
+        ]);
     }
 };
 
@@ -119,7 +129,7 @@ export const getUsers = async (req, res) => {
         const users = await User.find();
         res.status(200).json(users);
     } catch (error) {
-        res.status(404).json({ message: ["El usuario no existe!"] });
+        res.status(404).json(["El usuario no existe!"]);
         console.error(error);
     }
 };
