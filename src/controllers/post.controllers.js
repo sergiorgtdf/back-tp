@@ -1,12 +1,12 @@
-import Post from "../models/Post";
+import Post from "../models/post.model.js";
 
 export const createPost = async (req, res) => {
     try {
-        const { title, description, autor, imageURL } = req.body;
+        const { title, description, imageURL } = req.body;
         const newPost = new Post({
             title,
             description,
-            autor: req.userId,
+            autor: req.user.id,
             imageURL,
         });
         const postSaved = await newPost.save();
@@ -19,25 +19,35 @@ export const createPost = async (req, res) => {
 
 export const getPosts = async (req, res) => {
     try {
-        const posts = await Post.find();
-        res.status(200).json(posts).populate("autor", { password: 0 });
+        const posts = await Post.find()
+            .populate("autor", [`username`, `imageURL`])
+            .sort({ createdAt: -1 });
+
+        if (!posts) return res.status(404).json(["No se encontraron posts"]);
+        return res.status(200).json(posts);
     } catch (error) {
-        res.status(404).json(["No se encontraron posts"]);
-        console.error(error);
+        res.status(500).json(["No se pudo obtener los posts"]);
+        console.log(error);
     }
 };
 
 export const getPostById = async (req, res) => {
     try {
-        const post = await Post.findById(req.params.postId);
-        res.status(200).json(post).populate("autor", { password: 0 });
+        // console.log(req.params.id);
+        const posts = await Post.findById(req.params.id)
+            .populate("autor", [`username`, `imageURL`])
+            .sort({ createdAt: -1 });
+
+        if (!posts) return res.status(404).json(["No se encontro el post"]);
+        // console.log(posts);
+        return res.status(200).json(posts);
     } catch (error) {
         res.status(404).json(["El post no existe!"]);
         console.error(error);
     }
 };
 
-export const deletePostById = async (req, res) => {
+export const deletePost = async (req, res) => {
     try {
         const { postId } = req.params;
         await Post.findByIdAndDelete(postId);
@@ -48,7 +58,7 @@ export const deletePostById = async (req, res) => {
     }
 };
 
-export const updatePostById = async (req, res) => {
+export const updatePost = async (req, res) => {
     try {
         const updatedPost = await Post.findByIdAndUpdate(
             req.params.postId,
@@ -70,6 +80,22 @@ export const getPostsByAutor = async (req, res) => {
         res.status(200).json(posts).populate("autor", { password: 0 });
     } catch (error) {
         res.status(404).json(["No se encontraron posts"]);
+        console.error(error);
+    }
+};
+
+export const commentPost = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const { comment } = req.body;
+
+        const post = await Post.findById(postId);
+        post.comments.push(comment);
+        await post.save();
+
+        res.status(200).json(["Comentario agregado", post]);
+    } catch (error) {
+        res.status(404).json(["Post no encontrado"]);
         console.error(error);
     }
 };

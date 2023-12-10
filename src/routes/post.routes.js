@@ -1,35 +1,31 @@
 import { Router } from "express";
+import { authRequired } from "../middlewares/validateToken.js";
 
 import {
     createPost,
-    updatePostById,
-    getPostById,
     getPosts,
-    deletePostById,
-} from "../controllers/post.controller.js";
-
-import {
-    loginValidationRules,
-    errorHandle,
-} from "../middlewares/user.validations.js";
-
-import {
-    errorHandle,
-    postValidationRules,
-} from "../middlewares/Post/post.validations.js";
+    getPostById,
+    deletePost,
+    updatePost,
+    getPostsByAutor,
+    commentPost,
+} from "../controllers/post.controllers.js";
 
 const postRoutes = Router();
 
-// Create un nuevo post
-postRoutes.post("/posts", postValidationRules, errorHandle, createPost);
-// Lista todos los posts
+// Todas
 postRoutes.get("/posts", getPosts);
-// Busca por id
+// Una
 postRoutes.get("/posts/:id", getPostById);
-// actualiza por id
-postRoutes.put("/update/:id", postValidationRules, errorHandle, updatePostById);
+// Crear
+postRoutes.post("/posts", authRequired, createPost);
+// Actualizar
+postRoutes.put("/posts/:id", authRequired, updatePost);
+// Eliminar
+postRoutes.delete("/posts/:id", authRequired, deletePost);
 
-// Elimina por id
-postRoutes.delete("/delete/:id", deletePostById);
+postRoutes.put("/comment-posts/:id", authRequired, commentPost);
+
+postRoutes.get("/posts-by/:autorId", getPostsByAutor);
 
 export default postRoutes;

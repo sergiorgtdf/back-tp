@@ -22,6 +22,22 @@ const postSchema = new Schema(
             type: String,
             required: true,
         },
+        likes: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "User",
+            },
+        ],
+        comments: [
+            {
+                text: String,
+                created: { type: Date, default: Date.now },
+                postedBy: {
+                    type: Schema.Types.ObjectId,
+                    ref: "User",
+                },
+            },
+        ],
     },
     {
         timestamps: true,
