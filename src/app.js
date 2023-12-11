@@ -8,7 +8,7 @@ import helmet from "helmet";
 
 import { connectMongo } from "./database/db.js";
 import userRoutes from "./routes/user.routes.js";
-import taskRoutes from "./routes/task.routes.js";
+// import taskRoutes from "./routes/task.routes.js";
 import postRoutes from "./routes/post.routes.js";
 
 export const server = express();
@@ -35,6 +35,6 @@ server.use(cookieParser());
 server.use(morgan("dev"));
 
 server.use("/api/", userRoutes);
-server.use("/api/", taskRoutes);
+// server.use("/api/", taskRoutes);
 server.use("/api/", postRoutes);
 // ---------------------------------USE------------------------------

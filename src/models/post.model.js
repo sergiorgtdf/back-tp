@@ -10,9 +10,9 @@ const postSchema = new Schema(
         description: {
             type: String,
             required: true,
-            unique: true,
             trim: true,
         },
+
         autor: {
             type: Schema.Types.ObjectId,
             ref: "User",
@@ -26,16 +26,6 @@ const postSchema = new Schema(
             {
                 type: Schema.Types.ObjectId,
                 ref: "User",
-            },
-        ],
-        comments: [
-            {
-                text: String,
-                created: { type: Date, default: Date.now },
-                postedBy: {
-                    type: Schema.Types.ObjectId,
-                    ref: "User",
-                },
             },
         ],
     },

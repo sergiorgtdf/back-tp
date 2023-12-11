@@ -2,12 +2,13 @@ import Post from "../models/post.model.js";
 
 export const createPost = async (req, res) => {
     try {
-        const { title, description, imageURL } = req.body;
+        const { title, description, imageURL, content } = req.body;
         const newPost = new Post({
             title,
             description,
             autor: req.user.id,
             imageURL,
+            content,
         });
         const postSaved = await newPost.save();
         res.status(201).json(postSaved);
@@ -61,7 +62,7 @@ export const deletePost = async (req, res) => {
 export const updatePost = async (req, res) => {
     try {
         const updatedPost = await Post.findByIdAndUpdate(
-            req.params.postId,
+            req.params.id,
             req.body,
             {
                 new: true,
