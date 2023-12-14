@@ -14,7 +14,8 @@ export const createUser = async (req, res) => {
         // Validar Usuario
         const userFound = await User.findOne({ email });
 
-        if (userFound) return res.status(400).send(["El Usuario ya existe"]);
+        if (userFound)
+            return res.status(400).send({ message: "El Usuario ya existe" });
 
         const passwordHash = await bcrypt.hash(password, 10);
 
@@ -32,24 +33,22 @@ export const createUser = async (req, res) => {
         });
         // Envia el token
         res.cookie("token", token);
-        res.localstorage.setItem("token", token);
-        res.localstorage.setItem("user", {
-            id: savedUser._id,
-            username: savedUser.username,
-            email: savedUser.email,
-            createdAt: savedUser.createdAt,
-            updateddAt: savedUser.updatedAt,
-        });
+        res.user(savedUser.populate("user", ["username", "email", "imageURL"]));
+        // res.localstorage .setItem("token", token);
+        // res.localstorage.setItem("user", {
+        //     id: savedUser._id,
+        //     username: savedUser.username,
+        //     email: savedUser.email,
+        // });
 
         res.status(200).json({
             id: savedUser._id,
             username: savedUser.username,
             email: savedUser.email,
-            createdAt: savedUser.createdAt,
-            updateddAt: savedUser.updatedAt,
+            avatarURL: savedUser.avatarURL,
         });
     } catch (error) {
-        res.status(500).send(["Se produjo unerror"]);
+        res.status(500).send([`Se produjo un error ${error}`]);
     }
 };
 
@@ -127,7 +126,12 @@ export const verifyToken = async (req, res) => {
 export const getUsers = async (req, res) => {
     try {
         const users = await User.find();
-        res.status(200).json(users);
+        res.status(200).json({
+            id: users.id,
+            username: users.username,
+            email: users.email,
+            avatarUrl: users.avatarURL,
+        });
     } catch (error) {
         res.status(404).json(["El usuario no existe!"]);
         console.error(error);

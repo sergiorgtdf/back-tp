@@ -22,6 +22,7 @@ export const getPosts = async (req, res) => {
     try {
         const posts = await Post.find()
             .populate("autor", [`username`, `imageURL`])
+            .populate(`comments.autor`, [`username`, `imageURL`])
             .sort({ createdAt: -1 });
 
         if (!posts) return res.status(404).json(["No se encontraron posts"]);
@@ -37,6 +38,7 @@ export const getPostById = async (req, res) => {
         // console.log(req.params.id);
         const posts = await Post.findById(req.params.id)
             .populate("autor", [`username`, `imageURL`])
+            .populate(`comments.autor`, [`username`, `imageURL`])
             .sort({ createdAt: -1 });
 
         if (!posts) return res.status(404).json(["No se encontro el post"]);
@@ -85,18 +87,50 @@ export const getPostsByAutor = async (req, res) => {
     }
 };
 
-export const commentPost = async (req, res) => {
+// ok
+export const commentAddPost = async (req, res) => {
+    const { comment } = req.body;
     try {
-        const { postId } = req.params;
-        const { comment } = req.body;
-
-        const post = await Post.findById(postId);
-        post.comments.push(comment);
-        await post.save();
-
-        res.status(200).json(["Comentario agregado", post]);
+        const postComment = await Post.findByIdAndUpdate(
+            req.params.id,
+            {
+                $push: {
+                    comments: { comment: comment, autor: req.user.id },
+                },
+            },
+            { new: true }
+        );
+        const { post } = await Post.findById(postComment._id).populate(
+            `comments.autor`,
+            [`username`, `imageURL`]
+        );
+        console.log(post);
+        res.status(200).json({
+            success: true,
+            post,
+        });
     } catch (error) {
-        res.status(404).json(["Post no encontrado"]);
-        console.error(error);
+        res.status(404).json(error);
+    }
+};
+
+export const addComment = async (req, res) => {
+    const { comment } = req.body;
+    console.log(comment);
+    console.log(req.params.id);
+    console.log(req.user.id);
+    try {
+        const postComment = await Post.findById(req.params.id);
+
+        postComment.comments.push({
+            comment: comment,
+            autor: req.user.id,
+        });
+        const comSaved = postComment.save({ new: true });
+
+        res.status(200).json(comSaved);
+    } catch (error) {
+        console.log(error);
+        res.status(404).json(error);
     }
 };

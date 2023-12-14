@@ -28,6 +28,16 @@ const postSchema = new Schema(
                 ref: "User",
             },
         ],
+        comments: [
+            {
+                comment: String,
+                created: { type: Date, default: Date.now },
+                autor: {
+                    type: Schema.Types.ObjectId,
+                    ref: "User",
+                },
+            },
+        ],
     },
     {
         timestamps: true,
