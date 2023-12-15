@@ -14,8 +14,7 @@ export const createUser = async (req, res) => {
         // Validar Usuario
         const userFound = await User.findOne({ email });
 
-        if (userFound)
-            return res.status(400).send({ message: "El Usuario ya existe" });
+        if (userFound) return res.status(400).json(["El Usuario ya existe"]);
 
         const passwordHash = await bcrypt.hash(password, 10);
 
@@ -32,57 +31,62 @@ export const createUser = async (req, res) => {
             id: savedUser._id,
         });
         // Envia el token
-        res.cookie("token", token);
-        res.user(savedUser.populate("user", ["username", "email", "imageURL"]));
-        // res.localstorage .setItem("token", token);
-        // res.localstorage.setItem("user", {
-        //     id: savedUser._id,
-        //     username: savedUser.username,
-        //     email: savedUser.email,
-        // });
+        res.cookie("token", token),
+            {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+            };
 
         res.status(200).json({
             id: savedUser._id,
             username: savedUser.username,
             email: savedUser.email,
             avatarURL: savedUser.avatarURL,
+            createdAt: savedUser.createdAt,
         });
     } catch (error) {
-        res.status(500).send([`Se produjo un error ${error}`]);
+        console.error(error);
+
+        res.status(500).json({ message: error.message });
     }
 };
 
 // TODO: OK;
 export const login = async (req, res) => {
     const { email, password } = req.body;
+    console.log(req.body);
     try {
         // Buscamos user en la DB
         const user = await User.findOne({ email });
 
-        if (!user) return res.status(400).send(["Usuario no existe!"]);
+        if (!user) return res.status(400).json(["Usuario no existe!"]);
 
         // Comparamos password
         const isMatchPassword = await bcrypt.compare(password, user.password);
 
         if (!isMatchPassword)
-            return res.status(401).send(["Password incorrecto"]);
+            return res.status(401).json(["Password incorrecto"]);
 
         // Crea el token
         const token = await createAccessToken({ id: user._id });
         // res.json({ token, foundUser });
-        res.cookie("token", token);
+        res.cookie("token", token),
+            {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+            };
 
-        res.status(200).json({ token, user });
-
-        // res.status(200).json({
-        //     id: user._id,
-        //     username: user.username,
-        //     email: user.email,
-        //     createdAt: user.createdAt,
-        //     updatedAt: user.updatedAt,
-        // });
+        res.status(200).json({
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            imageURL: user.imageURL,
+            createdAt: user.createdAt,
+        });
     } catch (error) {
-        res.status(500).send([`No se pudo iniciar sesion`]);
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -98,23 +102,24 @@ export const verifyToken = async (req, res) => {
                 .status(401)
                 .json(["No tienes autorizacion para realizar esta accion"]);
         // verifica el token
-        const user = jwt.verify(token, secret);
-        if (!user)
-            return res
-                .status(401)
-                .json(["No tienes autorizacion para realizar esta accion"]);
-        // verifica que el usuario exista en la DB
-        const userFound = await User.findById(user.id);
-        if (!userFound)
-            return res
-                .status(401)
-                .json(["No tienes autorizacion para realizar esta accion"]);
-        // si todo esta bien, envia el usuario
-        res.status(200).json({
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            avatarUrl: user.avatarURL,
+        const user = jwt.verify(token, secret, async (err, user) => {
+            if (err) return res.status(401).json(["Token invalido"]);
+
+            const userFound = await User.findById(user.id);
+            if (!userFound)
+                return res
+                    .status(401)
+                    .json(["No tienes autorizacion para realizar esta accion"]);
+            // verifica que el usuario exista en la DB
+
+            // si todo esta bien, envia el usuario
+            res.status(200).json({
+                id: userFound.id,
+                username: userFound.username,
+                email: userFound.email,
+                imageURL: userFound.imageURL,
+                createdAt: userFound.createdAt,
+            });
         });
     } catch (error) {
         res.status(500).json([
@@ -144,7 +149,7 @@ export const getUserById = async (req, res) => {
 
         res.status(200).json(user);
     } catch (error) {
-        res.status(404).json({ message: ["El usuario no existe!"] });
+        res.status(404).json(["El usuario no existe!"]);
         console.error(error);
     }
 };
@@ -155,7 +160,7 @@ export const deleteUserById = async (req, res) => {
         await User.findByIdAndDelete(userId);
         res.status(204).json();
     } catch (error) {
-        res.status(404).json({ message: ["Usuario no encontrado"] });
+        res.status(404).json(["Usuario no encontrado"]);
         // console.error(error);
     }
 };
@@ -171,36 +176,34 @@ export const updateUserById = async (req, res) => {
         );
         res.status(200).json(updatedUser);
     } catch (error) {
-        res.status(404).json({ message: ["Usuario no encontrado"] });
+        res.status(404).json(["Usuario no encontrado"]);
         console.error(error);
     }
 };
 
 // TODO: OK;
-export const logout = async (req, res) => {
+export const logout = (req, res) => {
     res.cookie("token", "", { expires: new Date(0) });
-    return res.status(200).json({ message: ["Nos vemos pronto!"] });
+    return res.status(200).json(["Nos vemos pronto!"]);
 };
 
 export const profile = async (req, res) => {
     try {
-        console.log(req.headers.cookie);
-        console.log("Id from profile", req.user._id);
+        console.log(req.cookies);
+        console.log("Id from profile", req.user.id);
         const userFound = await User.findById(req.user.id);
         // const userFound = await User.findById(req.user.id);
-        if (!userFound)
-            return res.status(404).json({ message: ["El usuario no existe"] });
-        res.status(200).json({
-            id: userFound._id,
+        if (!userFound) return res.status(404).json(["El usuario no existe"]);
 
+        return res.status(200).json({
+            id: userFound._id,
             username: userFound.username,
             email: userFound.email,
             imageURL: userFound.imageURL,
             createdAt: userFound.createdAt,
-            updatedAt: userFound.updatedAt,
         });
     } catch (error) {
-        res.status(500).json({ message: ["Se produjo un error"] });
+        res.status(500).json(["Se produjo un error"]);
         console.error(error);
     }
 };

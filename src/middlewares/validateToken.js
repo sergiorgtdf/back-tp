@@ -9,11 +9,11 @@ export const authRequired = (req, res, next) => {
     if (!token)
         return res
             .status(401)
-            .json({ message: "Unauthorized, there is no token!" });
+            .json({ message: "No autorizado, no tiene token" });
 
     // verifuca el token, con la clave secreta
     jwt.verify(token, secret, (err, user) => {
-        if (err) return res.status(403).json({ message: "Invalid Token" });
+        if (err) return res.status(403).json({ message: "Token Invalido" });
         console.log(user);
 
         req.user = user;
