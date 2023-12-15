@@ -107,14 +107,13 @@ export const commentAddPost = async (req, res) => {
             },
             { new: true }
         );
-        // const { post } = await Post.findById(postComment._id)
-        //     .populate("autor", [`username`, `imageURL`])
-        //     .populate(`comments.autor`, [`username`, `imageURL`])
-        //     .sort({ createdAt: -1 });
-        // console.log(post);
-        res.status(200).json({
-            success: true,
-        });
+        const postComentado = await Post.findById(req.params.id)
+            .populate("autor", [`username`, `imageURL`])
+            .populate(`comments.autor`, [`username`, `imageURL`])
+            .sort({ createdAt: -1 });
+        console.log(postComentado.comments);
+        const comentarios = postComentado.comments;
+        res.status(200).json(comentarios);
     } catch (error) {
         res.status(404).json(error);
     }
@@ -134,7 +133,10 @@ export const addComment = async (req, res) => {
         });
         const comSaved = postComment.save({ new: true });
 
-        res.status(200).json(comSaved);
+        res.status(200).json({
+            success: true,
+            comSaved,
+        });
     } catch (error) {
         console.log(error);
         res.status(404).json(error);
